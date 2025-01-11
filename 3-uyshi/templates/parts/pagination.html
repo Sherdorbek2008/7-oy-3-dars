@@ -1,0 +1,21 @@
+{% if course.has_other_pages and students.has_other_pages %}
+<div class="d-flex justify-content-center">
+    <nav aria-label="Page navigation example" class="mt-5">
+        <ul class="pagination">
+            {% if course.has_previous and students.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ course.previous_page_number }}">Previous</a></li>
+            {% endif %}
+            {% for page in course.paginator.page_range %}
+            {% if page == course.number and students.number %}
+            <li class="page-item"><a class="page-link">{{ page }}</a></li>
+            {% elif page > course.number|add:-3  and page < course.number|add:3 %}
+            <li class="page-item"><a class="page-link" href="?page={{ page }}">{{ page }}</a></li>
+            {% endif %}
+            {% endfor %}
+            {% if course.has_next and students.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ course.next_page_number }}">Next</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endif %}
