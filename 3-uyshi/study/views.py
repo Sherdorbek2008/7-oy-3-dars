@@ -1,22 +1,23 @@
-from django.shortcuts import render, redirect, get_object_or_404, get_list_or_404
-from django.contrib.auth import login, logout, authenticate, update_session_auth_hash
-from django.contrib.auth.decorators import login_required, permission_required
+from django.shortcuts import render, redirect, get_object_or_404
 from django.core.handlers.wsgi import WSGIRequest
-from django.core.paginator import Paginator
-from django.core.mail import send_mail
 from django.contrib import messages
-from datetime import datetime
+from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required, permission_required
 from .forms import *
-
+from .models import *
+from django.core.mail import send_mail
+from django.core.paginator import Paginator
 
 
 def index(request: WSGIRequest):
-    course = Course.objects.all()
+    courses = Course.objects.all()
     students = Student.objects.all()
-
+    course = Paginator(courses, 3)
+    student = Paginator(students, 3)
+    page = request.GET.get('page', 1)
     context = {
-        "courses": course,
-        "students": students,
+        "course": course.page(page),
+        "students": student.page(page),
         "title": 'Bosh sahifa',
     }
 
@@ -27,14 +28,18 @@ def index(request: WSGIRequest):
 def course_detail(request: WSGIRequest, course_id):
     course = get_object_or_404(Course, pk=course_id)
     students = Student.objects.filter(course_id=course_id)
+    comments = Comment.objects.filter(course=course_id)
+    form = CommentForm
 
     context = {
-        "courses": [course],
+        "course": course,
         "students": students,
         "title": 'Bosh sahifa',
+        "comments": comments,
+        'form': form,
     }
 
-    return render(request, "index.html", context)
+    return render(request, "detail.html", context)
 
 
 @login_required
@@ -53,7 +58,7 @@ def add_course(request: WSGIRequest):
     if request.method == 'POST':
         form = CourseForm(data=request.POST, files=request.FILES)
         if form.is_valid():
-            form.create(Course)
+            form.save()
             messages.success(request, "Kurs muvaffaqiyatli qo'shildi!")
             return redirect('home')
         else:
@@ -72,20 +77,19 @@ def update_course(request: WSGIRequest, course_id):
     course = get_object_or_404(Course, pk=course_id)
 
     if request.method == 'POST':
-        form = CourseForm(data=request.POST)
+        form = CourseForm(data=request.POST, instance=course)
         if form.is_valid():
-            form.update(course)
+            form.save()
             messages.success(request, "Ma'lumot muvaffaqiyatli o'zgartirildi!")
-            return redirect('course_detail', course_id=course_id)
-
-    form = CourseForm(initial={
-        'title': course.name,
-        'description': course.description,
-        'photo': course.photo,
-    })
+            return redirect('course_detail', course_id=course.id)
+        else:
+            messages.error(request, "Ma'lumotni o'zgartirishda xatolik yuz berdi.")
+    else:
+        form = CourseForm(instance=course)
 
     context = {
-        'forms': form,
+        'form': form,
+        'course': course,
     }
 
     return render(request, 'add_course.html', context)
@@ -95,7 +99,56 @@ def update_course(request: WSGIRequest, course_id):
 def delete_course(request: WSGIRequest, course_id):
     course = get_object_or_404(Course, pk=course_id)
     course.delete()
+    messages.success(request, "Ma'lumot muvaffaqiyatli o'chirildi!")
+    return redirect('home')
 
+
+@permission_required('study.add_student', login_url='not_found')
+def add_student(request: WSGIRequest):
+    if request.method == 'POST':
+        form = StudentForm(data=request.POST, files=request.FILES)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "O'quvchi muvaffaqiyatli qo'shildi!")
+            return redirect('home')
+        else:
+            messages.error(request, "O'quvchi qo'shishda xatolik yuz berdi.")
+    else:
+        form = StudentForm()
+
+    context = {
+        "form": form
+    }
+    return render(request, 'add_student.html', context)
+
+
+@permission_required('study.change_student', login_url='not_found')
+def update_student(request: WSGIRequest, student_id):
+    student = get_object_or_404(Student, pk=student_id)
+
+    if request.method == 'POST':
+        form = StudentForm(data=request.POST, instance=student)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Ma'lumot muvaffaqiyatli o'zgartirildi!")
+            return redirect('student_detail', student_id=student.id)
+        else:
+            messages.error(request, "Ma'lumotni o'zgartirishda xatolik yuz berdi.")
+    else:
+        form = StudentForm(instance=student)
+
+    context = {
+        'form': form,
+        'student': student,
+    }
+
+    return render(request, 'add_student.html', context)
+
+
+@permission_required('study.delete_student', login_url='not_found')
+def delete_student(request: WSGIRequest, student_id):
+    student = get_object_or_404(Student, pk=student_id)
+    student.delete()
     messages.success(request, "Ma'lumot muvaffaqiyatli o'chirildi!")
     return redirect('home')
 
@@ -104,14 +157,14 @@ def register(request: WSGIRequest):
     if request.method == 'POST':
         form = RegisterForm(data=request.POST)
         if form.is_valid():
-            form.create(MyUser)
+            form.save()
             messages.success(request, "Tabriklayman, muvaffaqiyatli ro'yxatdan o'tdingiz!")
             return redirect('login')
     else:
         form = RegisterForm()
 
     context = {
-        'forms': form,
+        'form': form,
     }
 
     return render(request, 'auth/register.html', context)
@@ -121,24 +174,17 @@ def loginView(request: WSGIRequest):
     if request.method == 'POST':
         form = LoginForm(data=request.POST)
         if form.is_valid():
-            user = authenticate(
-                username=form.cleaned_data.get('username'),
-                password=form.cleaned_data.get('password')
-            )
+            user = form.get_user()
+            login(request, user)
 
-            if user is None:
-                messages.error(request,
-                               "Foydalanuvchi nomi yoki parol noto'g'ri kiritildi. Iltimos, ma'lumotlarni tekshirib qayta urinib ko'ring.")
-            else:
-                login(request, user)
-
-                messages.success(request, "Tizimga muvaffaqiyatli kirdingiz.")
-                return redirect('home')
+            messages.success(request,
+                             "Akkauntingizga muvaffaqiyatli kirdingiz. Endi barcha imkoniyatlardan foydalana olasiz.")
+            return redirect('home')
     else:
         form = LoginForm()
 
     context = {
-        'forms': form
+        'form': form
     }
 
     return render(request, 'auth/login.html', context)
@@ -146,7 +192,6 @@ def loginView(request: WSGIRequest):
 
 def logoutView(request: WSGIRequest):
     logout(request)
-
     messages.success(request, "Tizimdan chiqish muvaffaqiyatli amalga oshirildi.")
     return redirect('login')
 
@@ -154,63 +199,6 @@ def logoutView(request: WSGIRequest):
 def not_found(request):
     return render(request, '404.html')
 
-
-def settings(request: WSGIRequest):
-    user = get_object_or_404(MyUser, username=request.user.username)
-    if request.method == 'POST':
-        form = SettingsForm(data=request.POST, files=request.FILES, instance=user)
-        if form.is_valid():
-
-            form.save()
-
-            messages.success(request, "Ma'lumotlar muvaffaqiyatli saqlandi.")
-            return redirect('settings_save')
-
-    else:
-        form = SettingsForm(instance=user)
-
-    context = {
-        'forms': form,
-        'current_year': datetime.now().year
-    }
-
-    return render(request, 'settings.html', context)
-
-
-def remove_picture(request: WSGIRequest):
-    user = request.user
-
-    if user.photo:
-        user.photo = None
-        user.save()
-
-        messages.success(request, "Profil rasmingiz o'chirildi.")
-    else:
-        messages.error(request, "Sizda profil rasm mavjud emas!")
-
-    return redirect('settings')
-
-
-
-def delete_account(request):
-    return render(request, 'delete_account.html')
-
-
-
-def delete_account_confirm(request: WSGIRequest):
-    user = request.user
-    user.delete()
-
-    messages.success(request, "Hisobingiz muvaffaqiyatli o'chirildi.")
-    return redirect('index')
-
-
-def not_found(request):
-    context = {
-        'current_year': datetime.now().year
-    }
-
-    return render(request, '404.html', context)
 
 def send_email(request: WSGIRequest):
     if request.method == "POST":

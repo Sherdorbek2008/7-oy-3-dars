@@ -2,20 +2,20 @@
 
 {% block main %}
 <div class="container my-5">
-    {% if courses %}
+    {% if course %}
     <h2 class="text-center mb-4">Kurslarimiz</h2>
     <div class="row row-cols-1 row-cols-md-3 g-4">
-        {% for course in courses %}
+        {% for course in course %}
         <div class="col">
             <div class="card h-100 shadow-sm border-light">
                 <div class="position-absolute top-0 end-0 p-2">
-                    {% if perms.manager.change_course %}
+                    {% if perms.study.change_course %}
                     <a href="{% url 'update_course' course.id %}" class="text-dark me-2">
                         <i class="fas fa-pen"></i>
                     </a>
                     {% endif %}
 
-                    {% if perms.manager.delete_course %}
+                    {% if perms.study.delete_course %}
                     <a href="{% url 'delete_course' course.id %}" class="text-dark">
                         <i class="far fa-trash-can"></i>
                     </a>
@@ -47,6 +47,19 @@
         {% for student in students %}
         <div class="col">
             <div class="card shadow-sm border-light">
+                <div class="position-absolute top-0 end-0 p-2">
+                    {% if perms.study.change_student %}
+                    <a href="{% url 'update_student' student.id %}" class="text-dark me-2">
+                        <i class="fas fa-pen"></i>
+                    </a>
+                    {% endif %}
+
+                    {% if perms.study.delete_student %}
+                    <a href="{% url 'delete_course' student.id %}" class="text-dark">
+                        <i class="far fa-trash-can"></i>
+                    </a>
+                    {% endif %}
+                </div>
                 <div class="card-body">
                     <h5 class="card-title">{{ student.name }} {{ student.lastname }}</h5>
                     <p class="card-text">{{ student.course.name }}</p>
@@ -63,6 +76,5 @@
     {% endif %}
 </div>
 
-{% include 'parts/pagination.html' %}
-
+{% include 'parts/_pagination.html' %}
 {% endblock %}

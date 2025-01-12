@@ -5,23 +5,23 @@
     <div class="container">
         <a class="navbar-brand me-2" href="{% url 'home' %}">
             <img
-                    src="{% static 'image/logo.png' %}"
-                    height="50"
-                    alt="Najot Ta'lim Logo"
-                    loading="lazy"
-                    style="margin-top: -1px;"
+                src="{% static 'image/logo.png' %}"
+                height="50"
+                alt="Najot Ta'lim Logo"
+                loading="lazy"
+                style="margin-top: -1px;"
             />
             Najot Ta'lim
         </a>
 
         <button
-                data-mdb-collapse-init
-                class="navbar-toggler"
-                type="button"
-                data-mdb-target="#navbarButtonsExample"
-                aria-controls="navbarButtonsExample"
-                aria-expanded="false"
-                aria-label="Toggle navigation"
+            data-mdb-collapse-init
+            class="navbar-toggler"
+            type="button"
+            data-mdb-target="#navbarButtonsExample"
+            aria-controls="navbarButtonsExample"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
         >
             <i class="fas fa-bars"></i>
         </button>
@@ -36,7 +36,12 @@
                     <a class="nav-link" href="{% url 'add_course' %}">Kurs qo'shish</a>
                 </li>
                 {% endif %}
-               {% if request.user.is_authenticated and request.user.is_staff %}
+                {% if perms.study.add_student %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'add_student' %}">Talaba qo'shish</a>
+                </li>
+                {% endif %}
+                {% if request.user.is_authenticated and request.user.is_staff %}
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'email' %}">Email Yuborish</a>
                 </li>
@@ -49,30 +54,31 @@
 
                 <div class="dropdown">
                     <a
-                            data-mdb-dropdown-init
-                            class="dropdown-toggle d-flex align-items-center hidden-arrow"
-                            href="#"
-                            id="navbarDropdownMenuAvatar"
-                            role="button"
-                            aria-expanded="false"
+                        data-mdb-dropdown-init
+                        class="dropdown-toggle d-flex align-items-center hidden-arrow"
+                        href="#"
+                        id="navbarDropdownMenuAvatar"
+                        role="button"
+                        aria-expanded="false"
                     >
                         <img
-                                src="{% if request.user.photo %}{{ request.user.photo.url }}{% else %}https://images.nightcafe.studio//assets/profile.png?tr=w-1600,c-at_max{% endif %}"
-                                class="rounded-circle"
-                                height="35"
-                                alt="Black and White Portrait of a Man"
-                                loading="lazy"
+                            src="{{ request.MyUser.photo.url|default:'https://images.nightcafe.studio/assets/profile.png?tr=w-1600,c-at_max' }}"
+                            class="rounded-circle"
+                            height="35"
+                            alt="User Profile Picture"
+                            loading="lazy"
                         />
                     </a>
+
                     <ul
-                            class="dropdown-menu dropdown-menu-end"
-                            aria-labelledby="navbarDropdownMenuAvatar"
+                        class="dropdown-menu dropdown-menu-end"
+                        aria-labelledby="navbarDropdownMenuAvatar"
                     >
                         <li>
                             <a class="dropdown-item" href="#">Mening profilim</a>
                         </li>
                         <li>
-                            <a class="dropdown-item" href="{% url 'settings' %}">Sozlamalar</a>
+                            <a class="dropdown-item" href="#">Sozlamalar</a>
                         </li>
                         <li>
                             <a class="dropdown-item" href="{% url 'logout' %}">Chiqish</a>
@@ -80,7 +86,15 @@
                     </ul>
                 </div>
             </div>
-
+            <a
+                data-mdb-ripple-init
+                class="btn text-white btn-floating m-1"
+                style="background-color: #0088cc;"
+                href="https://t.me/rizow_king"
+                role="button"
+            >
+                <i class="fab fa-telegram"></i>
+            </a>
 
             {% else %}
             <div class="d-flex align-items-center">
@@ -90,8 +104,17 @@
                 <a href="{% url 'register' %}" data-mdb-ripple-init type="button" class="btn btn-primary me-3">
                     Ro'yxatdan o'tish
                 </a>
-                {% endif %}
+                <a
+                    data-mdb-ripple-init
+                    class="btn text-white btn-floating m-1"
+                    style="background-color: #0088cc;"
+                    href="https://t.me/rizow_king"
+                    role="button"
+                >
+                    <i class="fab fa-telegram"></i>
+                </a>
             </div>
+            {% endif %}
         </div>
     </div>
 </nav>

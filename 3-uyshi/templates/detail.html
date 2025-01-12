@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block main %}
+
+<!-- Cards -->
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    <div class="col">
+        <div class="card h-100">
+            {% if course.photo %}
+            <img src="{{ course.photo.url }}" class="card-img-top" alt="{{ course.name }} photo"
+                 title="{{ course.name }}">
+            {% endif %}
+            <br>
+            <div class="card-body">
+                <div class="d-flex flex-row-reverse">
+                    <div class="position-absolute top-0 end-0 p-2">
+                        {% if perms.study.change_course %}
+                        <a href="{% url 'update_course' course.id %}" class="text-dark me-2">
+                            <i class="fas fa-pen"></i>
+                        </a>
+                        {% endif %}
+
+                        {% if perms.study.delete_course %}
+                        <a href="{% url 'delete_course' course.id %}" class="text-dark">
+                            <i class="far fa-trash-can"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <a href="{% url 'home' %}">
+                    <h5 class="card-title">{{ course.name }}</h5>
+                </a>
+                <p class="card-text">
+                    <strong>Name:</strong> {{ course.name }} <br>
+                    <strong>Description:</strong> {{ course.description }} <br>
+                    <strong>Starts from:</strong> {{ course.created_at|date:"F j, Y" }} <br>
+                </p>
+            </div>
+            <div class="card-footer d-flex justify-content-around">
+                <small class="text-muted">{{ course.created_at|date:"F j, Y" }}</small>
+                <small class="text-muted">{{ course.name }}</small>
+                <small>ID: {{ course.id }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- End Cards -->
+
+<!-- Back Button -->
+<div class="mt-5 d-flex justify-content-center">
+    <a href="{% url 'home' %}" class="btn btn-outline-primary btn-rounded">
+        Ortga
+    </a>
+</div>
+
+
+<!-- Comments Section -->
+<h3 class="mt-4">Comments</h3>
+{% if request.user.is_authenticated %}
+<form method="post" action="{% url 'comment_save' course.pk%}" class="mb-5">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-success">Save</button>
+</form>
+{% else %}
+<h2>Komment qoldirish uchun <a href="{% url 'login' %}">login</a> qiling</h2>
+{% endif %}
+{% for comment in comments %}
+<div class="card border border-dark mb-3" style="max-width: 100rem;">
+    <div class="card-header">
+        {{ comment.author.username }}
+        {% if request.user == comment.author or request.user.is_superuser %}
+        <a href="{% url 'comment_delete' comment.id%}"><i class="fas fa-trash-can"></i></a>
+        <a href="{% url 'comment_update' comment.id%}"><i class="fas fa-pen-to-square"></i></a>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        <p class="card-text">{{ comment.text }}</p>
+    </div>
+    <div class="card-footer bg-transparent border-success">{{ comment.created }}</div>
+</div>
+{% endfor %}
+
+{% endblock main %}

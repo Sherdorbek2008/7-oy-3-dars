@@ -22,7 +22,7 @@ class StudentAdmin(admin.ModelAdmin):
     actions_on_bottom = True
 
 
-class UserAdmin(admin.ModelAdmin):
+class MyUserAdmin(admin.ModelAdmin):
     list_display = ('id', 'username', 'email', 'first_name', 'last_name', 'phone', 'is_staff')
     list_display_links = ('id', 'username')
     list_filter = ('id', 'username')
@@ -32,6 +32,6 @@ class UserAdmin(admin.ModelAdmin):
     actions_on_bottom = True
 
 
-admin.site.register(MyUser, UserAdmin)
+admin.site.register(MyUser, MyUserAdmin)
 admin.site.register(Course, CourseAdmin)
 admin.site.register(Student, StudentAdmin)

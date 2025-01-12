@@ -1,9 +1,6 @@
 from django import forms
-from django.core.exceptions import ValidationError
-from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from .models import *
-from .validators import registerName
 
 
 class CourseForm(forms.ModelForm):
@@ -145,6 +142,8 @@ class LoginForm(AuthenticationForm):
         password.widget.attrs.update({'class': "form-control form-control-lg"})
 
 
+
+
 class EmailForm(forms.Form):
     subject = forms.CharField(max_length=150, widget=forms.TextInput(attrs={
         "class": "form-control"
@@ -152,3 +151,4 @@ class EmailForm(forms.Form):
     message = forms.CharField(widget=forms.Textarea(attrs={
         "class": "form-control"
     }))
+
